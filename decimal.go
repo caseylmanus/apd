@@ -15,6 +15,7 @@
 package apd
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"math"
 	"math/big"
@@ -792,6 +793,20 @@ func (d *Decimal) MarshalText() ([]byte, error) {
 	return []byte(d.String()), nil
 }
 
+//MarshalJSON implements json.Marshaller
+func (d *Decimal) MarshalJSON() ([]byte, error) {
+	if d == nil {
+		return NullBytes, nil
+	}
+	return []byte(d.String()), nil
+}
+
+//UnmarshalJSON implements json.Marshaller
+func (d *Decimal) UnmarshalJSON(data []byte) error {
+	_, _, err := d.SetString(string(data))
+	return err
+}
+
 // NullDecimal represents a string that may be null. NullDecimal implements
 // the database/sql.Scanner interface so it can be used as a scan destination:
 //
@@ -817,6 +832,50 @@ func (nd *NullDecimal) Scan(value interface{}) error {
 	}
 	nd.Valid = true
 	return nd.Decimal.Scan(value)
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (nd *NullDecimal) UnmarshalText(text []byte) error {
+	if text == nil || len(text) == 0 {
+		nd.Valid = false
+		return nil
+	}
+	nd.Decimal.UnmarshalText(text)
+	var err error
+	return err
+}
+
+//NullBytes Represents JSON null
+var NullBytes = []byte("null")
+
+//UnmarshalJSON implements json.Unmarshaller
+func (nd *NullDecimal) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, NullBytes) {
+		nd.Valid = false
+	}
+	return nd.Decimal.UnmarshalJSON(data)
+}
+
+// MarshalJSON implements json.Marshaler.
+func (nd NullDecimal) MarshalJSON() ([]byte, error) {
+	if !nd.Valid {
+		return NullBytes, nil
+	}
+	return nd.Decimal.MarshalJSON()
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (nd NullDecimal) MarshalText() ([]byte, error) {
+	if nd.Valid {
+		return []byte{}, nil
+	}
+	return nd.Decimal.MarshalText()
+}
+
+// SetValid changes this Decimal value and also sets it to be non-null.
+func (nd *NullDecimal) SetValid(d Decimal) {
+	nd.Decimal = d
+	nd.Valid = true
 }
 
 // Value implements the database/sql/driver.Valuer interface.
