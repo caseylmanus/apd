@@ -853,7 +853,12 @@ func (nd *NullDecimal) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, NullBytes) {
 		nd.Valid = false
 	}
-	return nd.Decimal.UnmarshalJSON(data)
+	err := nd.Decimal.UnmarshalJSON(data)
+	if err != nil {
+		return err
+	}
+	nd.Valid = true
+	return nil
 }
 
 // MarshalJSON implements json.Marshaler.
