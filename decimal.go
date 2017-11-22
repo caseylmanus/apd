@@ -848,7 +848,7 @@ func (nd *NullDecimal) UnmarshalText(text []byte) error {
 //NullBytes Represents JSON null
 var NullBytes = []byte("null")
 
-//UnmarshalJSON implements json.Unmarshaller
+//UnmarshalJSON implements json.Unmarshaler
 func (nd *NullDecimal) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, NullBytes) {
 		nd.Valid = false
